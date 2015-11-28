@@ -2,6 +2,9 @@
 // https://github.com/foo123/SelectorListener
 !function( ){
 "use strict";
+
+if ( !!window.SelectorListener ) return;
+
 var events = {},
     selectors = {},
     // IE does not work with layout-color: initial, use explicit values
@@ -69,7 +72,9 @@ HTMLElement.prototype._decorateDom = function( prop, val ) {
     return el;
 };
 HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function( selector, fn ){
-    var sel = selector.replace(exists_re,'[__existing__]').replace(added_re, ':not([__existing__])'),
+    if ( !selector || 'function' !== typeof fn ) return;
+    
+    var sel = selector.replace(exists_re, '[__existing__]').replace(added_re, ':not([__existing__])'),
         key = selectors[sel],
         listeners = this.selectorListeners = this.selectorListeners || {};
         
@@ -97,7 +102,7 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
 HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSelectorListener = function( selector, fn ){
     if ( !selector ) return;
     
-    var sel = selector.replace(exists_re,'[__existing__]').replace(added_re, ':not([__existing__])');
+    var sel = selector.replace(exists_re, '[__existing__]').replace(added_re, ':not([__existing__])');
     
     if ( !selectors.hasOwnProperty(sel) ) return;
     
@@ -129,7 +134,7 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
                 }, this);
         }
     }
-    else if ( arguments.length < 3 ) // remove all
+    else if ( arguments.length < 2 ) // remove all
     {
         styles.sheet.deleteRule(styles.sheet.cssRules.item(event.rule));
         keyframes.removeChild(event.keyframe);
@@ -144,4 +149,40 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
             }, this);
     }
 };
+
+window.SelectorListener = {
+    
+    VERSION: '1.0',
+    
+    jquery: function( $ ) {
+        if ( 'function' === typeof $.fn.onSelector ) return;
+        $.fn.onSelector = function( sel, fn ) {
+            if ( !!sel && 'function' === typeof fn )
+            {
+                this.each(function( ){
+                    this.addSelectorListener( sel, fn );
+                });
+            }
+            return this;
+        };
+        $.fn.offSelector = function( sel, fn ) {
+            if ( 'function' === typeof fn )
+            {
+                this.each(function( ){
+                    this.removeSelectorListener( sel, fn );
+                });
+            }
+            else
+            {
+                this.each(function( ){
+                    this.removeSelectorListener( sel );
+                });
+            }
+            return this;
+        };
+    }
+};
+// add it now as a plugin to jQuery
+if ( 'undefined' !== typeof jQuery ) window.SelectorListener.jquery( jQuery );
+
 }( );
