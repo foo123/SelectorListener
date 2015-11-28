@@ -3,6 +3,10 @@ SelectorListener
 
 Provides the following document/element methods to enable listening for CSS selector rule matches:
 
+
+**note** `this` reference inside callbacks reference the matched element (i.e `event.target`) and **not** the element the listener is attached to (similar to `jQuery` use)
+
+
 ###The Basics###
 
 ```javascript
@@ -45,6 +49,20 @@ document.addSelectorListener('.tooltip:hover', function(){ ... });
 document.querySelector('#RandomForm').addSelectorListener('slider:out-of-range', function(){
   alert('Your slider value is now out of range! Oh noes!');
 });
+
+```
+
+###Select only newly added and/or already existing elements:###
+
+```javascript
+
+document.addSelectorListener('.foo[bar="boom"]::added', function(){ ... });
+
+// this also works
+document.addSelectorListener('.foo[bar="boom"]:not(::exists)', function(){ ... });
+
+
+document.addSelectorListener('*:exists:target', function(){ ... });
 
 ```
 
