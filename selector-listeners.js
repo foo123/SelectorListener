@@ -22,7 +22,10 @@ var events = {},
         ((this.selectorListeners || {})[key] || []).forEach(function(fn){
             fn.call(/*this*/el, event);
         });
-        el._decorateDom('__existing__', 1);
+        // add a small delay
+        setTimeout(function(){
+            el._decorateDom('__existing__', 1);
+        }, 10);
     },
     prefix = (function() {
         var duration = 'animation-duration: '+anim_dur+';',
