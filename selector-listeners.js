@@ -26,9 +26,9 @@ var events = {},
             fn.call(/*this*/el, event);
         });
         // add a small delay
-        setTimeout(function(){
+        //setTimeout(function(){
             el._decorateDom('__existing__', 1);
-        }, 10);
+        //}, 10);
     },
     prefix = (function() {
         var duration = 'animation-duration: '+anim_dur+';',
