@@ -66,3 +66,24 @@ document.addSelectorListener('*:exists:target', function(){ ... });
 
 ```
 
+###Select elements which have their css-class changed (either a css class added or removed):###
+
+```javascript
+
+document.addSelectorListener('.foo[bar="boom"]::class-added(.a-class)', function(){ ... });
+
+document.addSelectorListener('.foo[bar="boom"]::class-removed(.a-class)', function(){ ... });
+
+```
+
+(see `index.html`)
+
+![selectors matched screenshot](selectors-matched.png)
+
+
+###Browser Support (tested)###
+
+1. Firefox 40+
+2. Chrome 41+
+3. Opera 34+
+4. IE 11+

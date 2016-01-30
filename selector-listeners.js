@@ -1,35 +1,27 @@
-// adapted from https://github.com/csuwildcat/SelectorListener
-// https://github.com/foo123/SelectorListener
+/**
+* https://github.com/foo123/SelectorListener
+* @VERSION: 1.1.0
+* adapted from https://github.com/csuwildcat/SelectorListener
+**/
 !function( ){
 "use strict";
 
-if ( !!window.SelectorListener ) return;
+// dont re-add it if already loaded and added
+if ( 'object' === typeof window.SelectorListener ) return;
 
 var events = {},
     selectors = {},
     // IE does not work with layout-color: initial, use explicit values
     anim = '{from {outline-color:#fff;} to {outline-color:#000;}}',
     anim_dur = '0.001s',
-    exists_re = /::?exists\b/gi,
-    added_re = /::?added\b/gi,
+    el_exists_re = /::?exists\b/gi,
+    el_added_re = /::?added\b/gi,
+    class_added_re = /::?class\-added\(([^\(\)]+)\)/gi,
+    class_removed_re = /::?class\-removed\(([^\(\)]+)\)/gi,
     styles = document.createElement('style'),
     keyframes = document.createElement('style'),
     head = document.getElementsByTagName('head')[0],
     startNames = ['animationstart', 'oAnimationStart', 'MSAnimationStart', 'webkitAnimationStart'],
-    startEvent = function(event){
-        var el = event.target,
-            key = event.animationName,
-            evt = events[key] || {};
-        event.selector = evt.selector;
-        //if ( evt.created && !!el.getAttribute('__existing__') ) return;
-        ((this.selectorListeners || {})[key] || []).forEach(function(fn){
-            fn.call(/*this*/el, event);
-        });
-        // add a small delay
-        //setTimeout(function(){
-            el._decorateDom('__existing__', 1);
-        //}, 10);
-    },
     prefix = (function() {
         var duration = 'animation-duration: '+anim_dur+';',
             name = 'animation-name: SelectorListener !important;',
@@ -46,35 +38,123 @@ styles.type = keyframes.type = "text/css";
 head.appendChild(styles);
 head.appendChild(keyframes);
 
-HTMLDocument.prototype._decorateDom = function( prop, val ) {
-    var el = this, attr, child, l, i;
+function each( x, F, i0, i1 )
+{
+    var len = x.length, argslen = arguments.length;
+    if ( argslen < 4 ) i1 = len-1;
+    if ( 0 > i1 ) i1 += len;
+    if ( argslen < 3 ) i0 = 0;
+    if ( i0 > i1 ) return x;
+    var i, k, l=i1-i0+1, l1, lr, r, q;
+    r=l&15; q=r&1;
+    if ( q ) F(x[i0], i0, x);
+    for (i=q; i<r; i+=2)
+    { 
+        k = i0+i;
+        F(x[  k], k, x);
+        F(x[++k], k, x);
+    }
+    for (i=r; i<l; i+=16)
+    {
+        k = i0+i;
+        F(x[  k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+        F(x[++k], k, x);
+    }
+    return x;
+}
+
+function startEvent( event )
+{
+    var el = event.target,
+        key = event.animationName,
+        evt = events[key] || {};
+    event.selector = evt.selector;
+    //if ( evt.created && !!el.hasAttribute('__exist__') ) return;
+    each((this.selectorListeners || {})[key] || [], function(fn){
+        fn.call(/*this*/el, event);
+    });
+    // add a small delay
+    //setTimeout(function(){
+        el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
+    //}, 10);
+}
+function decorateEl( el )
+{
+    if ( !el.hasAttribute( 'sl__exist__' ) )
+    {
+        el.setAttribute( 'sl__exist__', 1 );
+        el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        return true;
+    }
+    return false;
+}
+function decorateElAndUpdateAttr( el )
+{
+    if ( !el.hasAttribute( 'sl__exist__' ) )
+    {
+        el.setAttribute( 'sl__exist__', 1 );
+        el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        return true;
+    }
+    else
+    {
+        el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        return false;
+    }
+}
+
+HTMLDocument.prototype._decorateDom = function( decorator ) {
+    var el = this, child, l, i;
     el = el.getElementsByTagName('body')[0];
     if ( 1 !== el.nodeType ) return el;
-    attr = el.getAttribute( prop );
-    if ( !attr || val !== attr )
+    if ( decorator( el ) )
     {
-        el.setAttribute( prop, val );
         child = el.childNodes;
-        for(i=0,l=child.length; i<l; i++) (1 === child[i].nodeType) && child[i]._decorateDom( prop, val );
+        for(i=0,l=child.length; i<l; i++) (1 === child[i].nodeType) && child[i]._decorateDom( decorator );
     }
     return el;
 };
-HTMLElement.prototype._decorateDom = function( prop, val ) {
-    var el = this, attr, child, l, i;
+HTMLElement.prototype._decorateDom = function( decorator ) {
+    var el = this, child, l, i;
     if ( 1 !== el.nodeType ) return el;
-    attr = el.getAttribute( prop );
-    if ( !attr || val !== attr )
+    if ( decorator( el ) )
     {
-        el.setAttribute( prop, val );
         child = el.childNodes;
-        for(i=0,l=child.length; i<l; i++) (1 === child[i].nodeType) && child[i]._decorateDom( prop, val );
+        for(i=0,l=child.length; i<l; i++) (1 === child[i].nodeType) && child[i]._decorateDom( decorator );
     }
     return el;
 };
 HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function( selector, fn ){
     if ( !selector || 'function' !== typeof fn ) return;
     
-    var sel = selector.replace(exists_re, '[__existing__]').replace(added_re, ':not([__existing__])'),
+    var has_attr_modified_sel = false,
+        sel = selector
+            .replace(class_added_re, function( g0, g1 ){
+                has_attr_modified_sel = true;
+                g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
+                return '[sl__exist__].'+g1+':not([sl__class__~='+g1+'])';
+            })
+            .replace(class_removed_re, function( g0, g1 ){
+                has_attr_modified_sel = true;
+                g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
+                return '[sl__exist__][sl__class__~='+g1+']:not(.'+g1+')';
+            })
+            .replace(el_exists_re, '[sl__exist__]')
+            .replace(el_added_re, ':not([sl__exist__])'),
         key = selectors[sel],
         listeners = this.selectorListeners = this.selectorListeners || {};
         
@@ -83,15 +163,15 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
     {
         key = selectors[sel] = 'SelectorListener-' + new Date().getTime();
         var node = document.createTextNode('@'+(prefix.keyframes?prefix.css:'')+'keyframes '+key+' '+anim);
-        keyframes.appendChild(node);
+        keyframes.appendChild( node );
         styles.sheet.insertRule(sel + prefix.properties.replace(/SelectorListener/g, key), 0);
-        events[key] = { count: 1, selector: selector, keyframe: node, rule: styles.sheet.cssRules[0] };
+        events[key] = { count: 1, selector: selector, attributeModified: has_attr_modified_sel, keyframe: node, rule: styles.sheet.cssRules[0] };
     } 
     
     if ( listeners.count ) listeners.count++;
     else
     {
-        this._decorateDom( '__existing__', 1 );
+        this._decorateDom( decorateEl );
         listeners.count = 1;
         startNames.forEach(function(name){
             this.addEventListener(name, startEvent, false);
@@ -102,7 +182,18 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
 HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSelectorListener = function( selector, fn ){
     if ( !selector ) return;
     
-    var sel = selector.replace(exists_re, '[__existing__]').replace(added_re, ':not([__existing__])');
+    var sel = selector
+            .replace(class_added_re, function( g0, g1 ){
+                g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
+                return '[sl__exist__].'+g1+':not([sl__class__~='+g1+'])';
+            })
+            .replace(class_removed_re, function( g0, g1 ){
+                g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
+                return '[sl__exist__][sl__class__~='+g1+']:not(.'+g1+')';
+            })
+            .replace(el_exists_re, '[sl__exist__]')
+            .replace(el_added_re, ':not([sl__exist__])')
+    ;
     
     if ( !selectors.hasOwnProperty(sel) ) return;
     
@@ -152,7 +243,7 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
 
 window.SelectorListener = {
     
-    VERSION: '1.0',
+    VERSION: '1.1.0',
     
     jquery: function( $ ) {
         if ( 'function' === typeof $.fn.onSelector ) return;
