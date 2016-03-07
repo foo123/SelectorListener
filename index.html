@@ -27,23 +27,33 @@
             border-left: 1px dotted #bbb;
         }
         
-        #container0, #container1 {
+        #container {
+            position: relative;
             min-height: 100px;
             margin: 10px;
             background: #eee;
             border: 1px solid #ccc;
         }
         
-        #container0:before, #container1:before {
+        #container:before {
             display: block;
             color: #ccc;
             font-style: italic;
             text-align: center;
         }
         
-        #container0 > *, #container1 > * {
+        #container > * {
+            position: relative;
             margin: 10px;
             background: #ADDFFD;
+        }
+        
+        #container > * > .remove {
+            display: block;
+            position: absolute;
+            top: 0; right: 0;
+            cursor: pointer;
+            z-index: 1;
         }
         
         #console_warning {
@@ -66,8 +76,7 @@
 	<input id="tagText" type="text" value="div" />
 	<button id="addElement">Add Element <i>(tag name)</i></button>
 	
-	<section id="container0"></section>
-	<div id="container1"></div>
+	<div id="container"></div>
 	
 	<div id="console_warning">TURN ON YOUR CONSOLE!</div>
     
@@ -83,7 +92,7 @@
         
         document.getElementById('addListener').addEventListener('click', function( ){
             var value = document.getElementById('selectorText').value;
-            if (value) document.addSelectorListener(value, printListener);
+            if ( value ) document.addSelectorListener(value, printListener);
         }, false);
         
         document.getElementById('addElement').addEventListener('click', function( ){
@@ -92,7 +101,15 @@
             var div = document.createElement(tag);
             if ( !!className ) div.className = className;
             div.innerHTML = tag.toUpperCase() + " element";
-            document.getElementById('container' + Math.floor(Math.random() * 2)).appendChild(div);
+            var removeBt = document.createElement('a');
+            removeBt.className = 'remove';
+            removeBt.innerHTML = 'x';
+            removeBt.onclick = function( ){
+                //document.getElementById('container').replaceChild( document.createElement('hr'), div );
+                document.getElementById('container').removeChild( div );
+            };
+            div.appendChild( removeBt );
+            document.getElementById('container').appendChild(div);
         }, false);
 
         document.getElementById('changeClass').addEventListener('click', function( ){

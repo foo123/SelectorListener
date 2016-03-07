@@ -1,6 +1,6 @@
 /**
 * https://github.com/foo123/SelectorListener
-* @VERSION: 1.1.0
+* @VERSION: 1.2.0
 * adapted from https://github.com/csuwildcat/SelectorListener
 **/
 !function( ){
@@ -14,13 +14,17 @@ var events = {},
     // IE does not work with layout-color: initial, use explicit values
     anim = '{from {outline-color:#fff;} to {outline-color:#000;}}',
     anim_dur = '0.001s',
+    SL_re = /SelectorListener/g,
     el_exists_re = /::?exists\b/gi,
     el_added_re = /::?added\b/gi,
+    el_removed_re = /([^,]+?)(::?removed)\b/gi,
     class_added_re = /::?class\-added\(([^\(\)]+)\)/gi,
     class_removed_re = /::?class\-removed\(([^\(\)]+)\)/gi,
     styles = document.createElement('style'),
     keyframes = document.createElement('style'),
     head = document.getElementsByTagName('head')[0],
+    recycleBin = document.createElement('div'),
+    recycleBin__added__ = false,
     startNames = ['animationstart', 'oAnimationStart', 'MSAnimationStart', 'webkitAnimationStart'],
     prefix = (function() {
         var duration = 'animation-duration: '+anim_dur+';',
@@ -35,8 +39,13 @@ var events = {},
     })();
     
 styles.type = keyframes.type = "text/css";
+styles.setAttribute( 'sl__exist__', 1 );
+keyframes.setAttribute( 'sl__exist__', 1 );
 head.appendChild(styles);
 head.appendChild(keyframes);
+recycleBin.setAttribute( 'sl__exist__', 1 );
+recycleBin.setAttribute( 'style', 'position:absolute;max-height:0;overflow:hidden;' );
+recycleBin.id = 'sl__recycle_bin__';
 
 function each( x, F, i0, i1 )
 {
@@ -87,10 +96,21 @@ function startEvent( event )
     each((this.selectorListeners || {})[key] || [], function(fn){
         fn.call(/*this*/el, event);
     });
-    // add a small delay
-    //setTimeout(function(){
+    if ( evt.removedMutation )
+    {
+        el.removeAttribute( 'sl__exist__' );
+        el.sl__removed__ = 1;
+    }
+    else
+    {
+        // add a small delay
+        //setTimeout(function(){
         el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
-    //}, 10);
+        //}, 10);
+    }
+    setTimeout(function( ){
+        emptyRecycleBin( );
+    }, 10);
 }
 function decorateEl( el )
 {
@@ -98,6 +118,18 @@ function decorateEl( el )
     {
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        el.removeChild = function( child ) {
+            recycleBin.appendChild( child );
+            child.setAttribute( 'sl__removed__', 1 );
+            return child;
+        };
+        el.sl__replaceChild = el.replaceChild;
+        el.replaceChild = function( newChild, oldChild ) {
+            el.sl__replaceChild( newChild, oldChild );
+            recycleBin.appendChild( oldChild );
+            oldChild.setAttribute( 'sl__removed__', 1 );
+            return oldChild;
+        };
         return true;
     }
     return false;
@@ -108,6 +140,18 @@ function decorateElAndUpdateAttr( el )
     {
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        el.removeChild = function( child ) {
+            recycleBin.appendChild( child );
+            child.setAttribute( 'sl__removed__', 1 );
+            return child;
+        };
+        el.sl__replaceChild = el.replaceChild;
+        el.replaceChild = function( newChild, oldChild ) {
+            el.sl__replaceChild( newChild, oldChild );
+            recycleBin.appendChild( oldChild );
+            oldChild.setAttribute( 'sl__removed__', 1 );
+            return oldChild;
+        };
         return true;
     }
     else
@@ -116,6 +160,19 @@ function decorateElAndUpdateAttr( el )
         return false;
     }
 }
+function emptyRecycleBin( )
+{
+    for(var i=recycleBin.childNodes.length-1; i>=0; i--)
+    {
+        var node = recycleBin.childNodes[i];
+        if ( node.sl__removed__ ) recycleBin.removeChild( node );
+    }
+}
+
+setTimeout(function recycle( ){
+    emptyRecycleBin( );
+    setTimeout(recycle, 10000);
+}, 10000);
 
 HTMLDocument.prototype._decorateDom = function( decorator ) {
     var el = this, child, l, i;
@@ -141,20 +198,32 @@ HTMLElement.prototype._decorateDom = function( decorator ) {
 HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function( selector, fn ){
     if ( !selector || 'function' !== typeof fn ) return;
     
+    if ( !recycleBin__added__ )
+    {
+        if ( document.body.childNodes.length ) document.body.insertBefore( recycleBin, document.body.firstChild );
+        else document.body.appendChild( recycleBin );
+        recycleBin__added__ = true;
+    }
+    
     var has_attr_modified_sel = false,
+        removed_mutation = false,
         sel = selector
             .replace(class_added_re, function( g0, g1 ){
                 has_attr_modified_sel = true;
                 g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
-                return '[sl__exist__].'+g1+':not([sl__class__~='+g1+'])';
+                return '[sl__exist__]:not([sl__removed__]).'+g1+':not([sl__class__~='+g1+'])';
             })
             .replace(class_removed_re, function( g0, g1 ){
                 has_attr_modified_sel = true;
                 g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
-                return '[sl__exist__][sl__class__~='+g1+']:not(.'+g1+')';
+                return '[sl__exist__]:not([sl__removed__])[sl__class__~='+g1+']:not(.'+g1+')';
             })
-            .replace(el_exists_re, '[sl__exist__]')
-            .replace(el_added_re, ':not([sl__exist__])'),
+            .replace(el_exists_re, '[sl__exist__]:not([sl__removed__])')
+            .replace(el_removed_re, function( g0, g1, g2 ){
+                removed_mutation = true;
+                return '#sl__recycle_bin__>'+g1+'[sl__exist__][sl__removed__]';
+            })
+            .replace(el_added_re, ':not([sl__exist__]):not([sl__removed__])'),
         key = selectors[sel],
         listeners = this.selectorListeners = this.selectorListeners || {};
         
@@ -164,8 +233,8 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
         key = selectors[sel] = 'SelectorListener-' + new Date().getTime();
         var node = document.createTextNode('@'+(prefix.keyframes?prefix.css:'')+'keyframes '+key+' '+anim);
         keyframes.appendChild( node );
-        styles.sheet.insertRule(sel + prefix.properties.replace(/SelectorListener/g, key), 0);
-        events[key] = { count: 1, selector: selector, attributeModified: has_attr_modified_sel, keyframe: node, rule: styles.sheet.cssRules[0] };
+        styles.sheet.insertRule(sel + prefix.properties.replace(SL_re, key), 0);
+        events[key] = { count: 1, selector: selector, removedMutation: removed_mutation, attributeModified: has_attr_modified_sel, keyframe: node, rule: styles.sheet.cssRules[0] };
     } 
     
     if ( listeners.count ) listeners.count++;
@@ -192,6 +261,7 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
                 return '[sl__exist__][sl__class__~='+g1+']:not(.'+g1+')';
             })
             .replace(el_exists_re, '[sl__exist__]')
+            .replace(el_removed_re, '[sl__exist__][sl__removed__]')
             .replace(el_added_re, ':not([sl__exist__])')
     ;
     
@@ -243,7 +313,7 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
 
 window.SelectorListener = {
     
-    VERSION: '1.1.0',
+    VERSION: '1.2.0',
     
     jquery: function( $ ) {
         if ( 'function' === typeof $.fn.onSelector ) return;

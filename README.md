@@ -52,7 +52,7 @@ document.querySelector('#RandomForm').addSelectorListener('slider:out-of-range',
 
 ```
 
-###Select only newly added and/or already existing elements:###
+###Select only newly added and/or already existing elements (DOM mutation-like events):###
 
 ```javascript
 
@@ -66,7 +66,15 @@ document.addSelectorListener('*:exists:target', function(){ ... });
 
 ```
 
-###Select elements which have their css-class changed (either a css class added or removed):###
+###Select only removed existing elements (DOM mutation-like events):###
+
+```javascript
+
+document.addSelectorListener('.foo[bar="boom"]::removed', function(){ ... });
+
+```
+
+###Select elements which have their css-class changed (either a css class added or removed) (DOM mutation-like events):###
 
 ```javascript
 
