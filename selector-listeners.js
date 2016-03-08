@@ -17,7 +17,7 @@ var events = {},
     SL_re = /SelectorListener/g,
     el_exists_re = /::?exists\b/gi,
     el_added_re = /::?added\b/gi,
-    el_removed_re = /([^,]+?)(::?removed)\b/gi,
+    el_removed_re = /([^, ]+?)(::?removed)\b/gi,
     class_added_re = /::?class\-added\(([^\(\)]+)\)/gi,
     class_removed_re = /::?class\-removed\(([^\(\)]+)\)/gi,
     styles = document.createElement('style'),
@@ -25,6 +25,7 @@ var events = {},
     head = document.getElementsByTagName('head')[0],
     recycleBin = document.createElement('div'),
     recycleBin__added__ = false,
+    recycleTimeout = 1000, // 1 seconds
     startNames = ['animationstart', 'oAnimationStart', 'MSAnimationStart', 'webkitAnimationStart'],
     prefix = (function() {
         var duration = 'animation-duration: '+anim_dur+';',
@@ -99,7 +100,7 @@ function startEvent( event )
     if ( evt.removedMutation )
     {
         el.removeAttribute( 'sl__exist__' );
-        el.sl__removed__ = 1;
+        el.sl__recycled__ = 0;
     }
     else
     {
@@ -108,9 +109,9 @@ function startEvent( event )
         el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
         //}, 10);
     }
-    setTimeout(function( ){
+    /*setTimeout(function( ){
         emptyRecycleBin( );
-    }, 10);
+    }, 10);*/
 }
 function decorateEl( el )
 {
@@ -118,16 +119,29 @@ function decorateEl( el )
     {
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        el.sl__removeChild = el.removeChild;
         el.removeChild = function( child ) {
-            recycleBin.appendChild( child );
-            child.setAttribute( 'sl__removed__', 1 );
+            if ( 1 === child.nodeType )
+            {
+                recycleBin.appendChild( child );
+                child.sl__recycled__ = 1;
+                child.setAttribute( 'sl__removed__', 1 );
+            }
+            else
+            {
+                el.sl__removeChild( child );
+            }
             return child;
         };
         el.sl__replaceChild = el.replaceChild;
         el.replaceChild = function( newChild, oldChild ) {
             el.sl__replaceChild( newChild, oldChild );
-            recycleBin.appendChild( oldChild );
-            oldChild.setAttribute( 'sl__removed__', 1 );
+            if ( 1 === oldChild.nodeType )
+            {
+                recycleBin.appendChild( oldChild );
+                oldChild.sl__recycled__ = 1;
+                oldChild.setAttribute( 'sl__removed__', 1 );
+            }
             return oldChild;
         };
         return true;
@@ -140,16 +154,29 @@ function decorateElAndUpdateAttr( el )
     {
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
+        el.sl__removeChild = el.removeChild;
         el.removeChild = function( child ) {
-            recycleBin.appendChild( child );
-            child.setAttribute( 'sl__removed__', 1 );
+            if ( 1 === child.nodeType )
+            {
+                recycleBin.appendChild( child );
+                child.sl__recycled__ = 1;
+                child.setAttribute( 'sl__removed__', 1 );
+            }
+            else
+            {
+                el.sl__removeChild( child );
+            }
             return child;
         };
         el.sl__replaceChild = el.replaceChild;
         el.replaceChild = function( newChild, oldChild ) {
             el.sl__replaceChild( newChild, oldChild );
-            recycleBin.appendChild( oldChild );
-            oldChild.setAttribute( 'sl__removed__', 1 );
+            if ( 1 === oldChild.nodeType )
+            {
+                recycleBin.appendChild( oldChild );
+                oldChild.sl__recycled__ = 1;
+                oldChild.setAttribute( 'sl__removed__', 1 );
+            }
             return oldChild;
         };
         return true;
@@ -165,14 +192,9 @@ function emptyRecycleBin( )
     for(var i=recycleBin.childNodes.length-1; i>=0; i--)
     {
         var node = recycleBin.childNodes[i];
-        if ( node.sl__removed__ ) recycleBin.removeChild( node );
+        if ( !node.sl__recycled__ ) recycleBin.removeChild( node );
     }
 }
-
-setTimeout(function recycle( ){
-    emptyRecycleBin( );
-    setTimeout(recycle, 10000);
-}, 10000);
 
 HTMLDocument.prototype._decorateDom = function( decorator ) {
     var el = this, child, l, i;
@@ -203,6 +225,10 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
         if ( document.body.childNodes.length ) document.body.insertBefore( recycleBin, document.body.firstChild );
         else document.body.appendChild( recycleBin );
         recycleBin__added__ = true;
+        setTimeout(function recycle( ){
+            emptyRecycleBin( );
+            setTimeout(recycle, recycleTimeout);
+        }, recycleTimeout);
     }
     
     var has_attr_modified_sel = false,
