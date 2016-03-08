@@ -105,6 +105,7 @@ function startEvent( event )
     {
         el.removeAttribute( 'sl__exist__' );
         el.sl__recycled__ = 0;
+        if ( recycleBin === el.parentNode ) recycleBin.removeChild( el );
     }
     else
     {
