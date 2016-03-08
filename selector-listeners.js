@@ -20,6 +20,7 @@ var events = {},
     el_removed_re = /([^, ]+?)(::?removed)\b/gi,
     class_added_re = /::?class\-added\(([^\(\)]+)\)/gi,
     class_removed_re = /::?class\-removed\(([^\(\)]+)\)/gi,
+    sl_css = document.createElement('style'),
     styles = document.createElement('style'),
     keyframes = document.createElement('style'),
     head = document.getElementsByTagName('head')[0],
@@ -39,13 +40,16 @@ var events = {},
         };
     })();
     
-styles.type = keyframes.type = "text/css";
+sl_css.type = styles.type = keyframes.type = "text/css";
+sl_css.setAttribute( 'sl__exist__', 1 );
 styles.setAttribute( 'sl__exist__', 1 );
 keyframes.setAttribute( 'sl__exist__', 1 );
+sl_css.appendChild( document.createTextNode('#sl__recycle_bin__{position:absolute;max-height:0 !important;overflow:hidden !important;}#sl__recycle_bin__>*{max-height:0 !important;overflow:hidden !important;}') );
+head.appendChild(sl_css);
 head.appendChild(styles);
 head.appendChild(keyframes);
 recycleBin.setAttribute( 'sl__exist__', 1 );
-recycleBin.setAttribute( 'style', 'position:absolute;max-height:0;overflow:hidden;' );
+recycleBin.setAttribute( 'style', 'position:absolute;max-height:0 !important;overflow:hidden !important;' );
 recycleBin.id = 'sl__recycle_bin__';
 
 function each( x, F, i0, i1 )
