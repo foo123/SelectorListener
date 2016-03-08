@@ -44,12 +44,12 @@ sl_css.type = styles.type = keyframes.type = "text/css";
 sl_css.setAttribute( 'sl__exist__', 1 );
 styles.setAttribute( 'sl__exist__', 1 );
 keyframes.setAttribute( 'sl__exist__', 1 );
-sl_css.appendChild( document.createTextNode('#sl__recycle_bin__{position:absolute;max-height:0 !important;overflow:hidden !important;}#sl__recycle_bin__>*{max-height:0 !important;overflow:hidden !important;}') );
+sl_css.appendChild( document.createTextNode('#sl__recycle_bin__{position:absolute;max-height:0 !important;max-width:0 !important;overflow:hidden !important;}#sl__recycle_bin__>*{max-height:0 !important;max-width:0 !important;overflow:hidden !important;}') );
 head.appendChild(sl_css);
 head.appendChild(styles);
 head.appendChild(keyframes);
 recycleBin.setAttribute( 'sl__exist__', 1 );
-recycleBin.setAttribute( 'style', 'position:absolute;max-height:0 !important;overflow:hidden !important;' );
+recycleBin.setAttribute( 'style', 'position:absolute;max-height:0 !important;max-width:0 !important;overflow:hidden !important;' );
 recycleBin.id = 'sl__recycle_bin__';
 
 function each( x, F, i0, i1 )
