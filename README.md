@@ -66,14 +66,6 @@ document.addSelectorListener('*:exists:target', function(){ ... });
 
 ```
 
-###Select only removed existing elements (DOM mutation-like events):###
-
-```javascript
-
-document.addSelectorListener('.foo[bar="boom"]::removed', function(){ ... });
-
-```
-
 ###Select elements which have their css-class changed (either a css class added or removed) (DOM mutation-like events):###
 
 ```javascript
@@ -81,6 +73,14 @@ document.addSelectorListener('.foo[bar="boom"]::removed', function(){ ... });
 document.addSelectorListener('.foo[bar="boom"]::class-added(.a-class)', function(){ ... });
 
 document.addSelectorListener('.foo[bar="boom"]::class-removed(.a-class)', function(){ ... });
+
+```
+
+###Select only existing elements that have been removed (DOM mutation-like events, experimental):###
+
+```javascript
+
+document.addSelectorListener('.foo[bar="boom"]::removed', function(){ ... });
 
 ```
 

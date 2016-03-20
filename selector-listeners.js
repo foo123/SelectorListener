@@ -101,54 +101,60 @@ function startEvent( event )
     each((this.selectorListeners || {})[key] || [], function(fn){
         fn.call(/*this*/el, event);
     });
+    // add a small delay
+    //setTimeout(function(){
+    el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
+    //}, 10);
     if ( evt.removedMutation )
     {
-        el.removeAttribute( 'sl__exist__' );
+        // if element IS removed and IS in the recycle bin
+        // remove it NOW explicitly, since any listeners have been called
         el.sl__recycled__ = 0;
-        if ( recycleBin === el.parentNode ) recycleBin.removeChild( el );
+        el.removeAttribute( 'sl__exist__' );
+        if ( recycleBin === el.parentNode )
+        {
+            recycleBin.removeChild( el );
+        }
     }
-    else
-    {
-        // add a small delay
-        //setTimeout(function(){
-        el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
-        //}, 10);
-    }
-    /*setTimeout(function( ){
-        emptyRecycleBin( );
-    }, 10);*/
 }
 function decorateEl( el )
 {
     if ( !el.hasAttribute( 'sl__exist__' ) )
     {
+        if ( el.hasAttribute( 'sl__removed__' ) ) el.removeAttribute( 'sl__removed__' );
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
-        el.sl__removeChild = el.removeChild;
-        el.removeChild = function( child ) {
-            if ( 1 === child.nodeType )
-            {
-                recycleBin.appendChild( child );
-                child.sl__recycled__ = 1;
-                child.setAttribute( 'sl__removed__', 1 );
-            }
-            else
-            {
-                el.sl__removeChild( child );
-            }
-            return child;
-        };
-        el.sl__replaceChild = el.replaceChild;
-        el.replaceChild = function( newChild, oldChild ) {
-            el.sl__replaceChild( newChild, oldChild );
-            if ( 1 === oldChild.nodeType )
-            {
-                recycleBin.appendChild( oldChild );
-                oldChild.sl__recycled__ = 1;
-                oldChild.setAttribute( 'sl__removed__', 1 );
-            }
-            return oldChild;
-        };
+        if ( !el.sl__removeChild )
+        {
+            el.sl__removeChild = el.removeChild;
+            el.removeChild = function( child ) {
+                if ( 1 === child.nodeType )
+                {
+                    recycleBin.appendChild( child );
+                    child.sl__recycled__ = new Date;
+                    child.setAttribute( 'sl__removed__', 1 );
+                }
+                else
+                {
+                    el.sl__removeChild( child );
+                }
+                return child;
+            };
+        }
+        if ( !el.sl__replaceChild )
+        {
+            el.sl__replaceChild = el.replaceChild;
+            el.replaceChild = function( newChild, oldChild ) {
+                el.sl__replaceChild( newChild, oldChild );
+                if ( 1 === oldChild.nodeType )
+                {
+                    recycleBin.appendChild( oldChild );
+                    oldChild.sl__recycled__ = new Date;
+                    oldChild.setAttribute( 'sl__removed__', 1 );
+                }
+                return oldChild;
+            };
+        }
         return true;
     }
     return false;
@@ -157,47 +163,57 @@ function decorateElAndUpdateAttr( el )
 {
     if ( !el.hasAttribute( 'sl__exist__' ) )
     {
+        if ( el.hasAttribute( 'sl__removed__' ) ) el.removeAttribute( 'sl__removed__' );
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
-        el.sl__removeChild = el.removeChild;
-        el.removeChild = function( child ) {
-            if ( 1 === child.nodeType )
-            {
-                recycleBin.appendChild( child );
-                child.sl__recycled__ = 1;
-                child.setAttribute( 'sl__removed__', 1 );
-            }
-            else
-            {
-                el.sl__removeChild( child );
-            }
-            return child;
-        };
-        el.sl__replaceChild = el.replaceChild;
-        el.replaceChild = function( newChild, oldChild ) {
-            el.sl__replaceChild( newChild, oldChild );
-            if ( 1 === oldChild.nodeType )
-            {
-                recycleBin.appendChild( oldChild );
-                oldChild.sl__recycled__ = 1;
-                oldChild.setAttribute( 'sl__removed__', 1 );
-            }
-            return oldChild;
-        };
+        if ( !el.sl__removeChild )
+        {
+            el.sl__removeChild = el.removeChild;
+            el.removeChild = function( child ) {
+                if ( 1 === child.nodeType )
+                {
+                    recycleBin.appendChild( child );
+                    child.sl__recycled__ = new Date;
+                    child.setAttribute( 'sl__removed__', 1 );
+                }
+                else
+                {
+                    el.sl__removeChild( child );
+                }
+                return child;
+            };
+        }
+        if ( !el.sl__replaceChild )
+        {
+            el.sl__replaceChild = el.replaceChild;
+            el.replaceChild = function( newChild, oldChild ) {
+                el.sl__replaceChild( newChild, oldChild );
+                if ( 1 === oldChild.nodeType )
+                {
+                    recycleBin.appendChild( oldChild );
+                    oldChild.sl__recycled__ = new Date;
+                    oldChild.setAttribute( 'sl__removed__', 1 );
+                }
+                return oldChild;
+            };
+        }
         return true;
     }
     else
     {
+        if ( el.hasAttribute( 'sl__removed__' ) ) el.removeAttribute( 'sl__removed__' );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
         return false;
     }
 }
 function emptyRecycleBin( )
 {
+    var t = new Date, d = 2*recycleTimeout;
     for(var i=recycleBin.childNodes.length-1; i>=0; i--)
     {
         var node = recycleBin.childNodes[i];
-        if ( !node.sl__recycled__ ) recycleBin.removeChild( node );
+        // empty nodes that either are not recycled or expired
+        if ( !node.sl__recycled__ || (t > d+node.sl__recycled__) ) recycleBin.removeChild( node );
     }
 }
 
@@ -234,6 +250,11 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
             emptyRecycleBin( );
             setTimeout(recycle, recycleTimeout);
         }, recycleTimeout);
+    }
+    else if ( !recycleBin.parentNode )
+    {
+        if ( document.body.childNodes.length ) document.body.insertBefore( recycleBin, document.body.firstChild );
+        else document.body.appendChild( recycleBin );
     }
     
     var has_attr_modified_sel = false,
@@ -285,15 +306,17 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
     var sel = selector
             .replace(class_added_re, function( g0, g1 ){
                 g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
-                return '[sl__exist__].'+g1+':not([sl__class__~='+g1+'])';
+                return '[sl__exist__]:not([sl__removed__]).'+g1+':not([sl__class__~='+g1+'])';
             })
             .replace(class_removed_re, function( g0, g1 ){
                 g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
-                return '[sl__exist__][sl__class__~='+g1+']:not(.'+g1+')';
+                return '[sl__exist__]:not([sl__removed__])[sl__class__~='+g1+']:not(.'+g1+')';
             })
-            .replace(el_exists_re, '[sl__exist__]')
-            .replace(el_removed_re, '[sl__exist__][sl__removed__]')
-            .replace(el_added_re, ':not([sl__exist__])')
+            .replace(el_exists_re, '[sl__exist__]:not([sl__removed__])')
+            .replace(el_removed_re, function( g0, g1, g2 ){
+                return '#sl__recycle_bin__>'+g1+'[sl__exist__][sl__removed__]';
+            })
+            .replace(el_added_re, ':not([sl__exist__]):not([sl__removed__])')
     ;
     
     if ( !selectors.hasOwnProperty(sel) ) return;
