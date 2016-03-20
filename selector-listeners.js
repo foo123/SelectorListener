@@ -11,6 +11,7 @@ if ( 'object' === typeof window.SelectorListener ) return;
 
 var events = {},
     selectors = {},
+    animationCount = 0,
     // IE does not work with layout-color: initial, use explicit values
     anim = '{from {outline-color:#fff;} to {outline-color:#000;}}',
     anim_dur = '0.001s',
@@ -282,7 +283,9 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
     if ( key ) events[key].count++;
     else
     {
-        key = selectors[sel] = 'SelectorListener-' + new Date().getTime();
+        // https://github.com/csuwildcat/SelectorListener/commit/1610d13e806e54e4d297ee54139290b938e516e5
+        // Removing chance of duplicate listener IDs
+        key = selectors[sel] = 'SelectorListener-' + (++animationCount)/*new Date().getTime()*/;
         var node = document.createTextNode('@'+(prefix.keyframes?prefix.css:'')+'keyframes '+key+' '+anim);
         keyframes.appendChild( node );
         styles.sheet.insertRule(sel + prefix.properties.replace(SL_re, key), 0);
