@@ -16,7 +16,7 @@ var events = {},
     anim = '{from {outline-color:#fff;} to {outline-color:#000;}}',
     anim_dur = '0.001s',
     SL_re = /SelectorListener/g,
-    el_exists_re = /::?exists\b/gi,
+    el_exists_re = /(:not\s*\(\s*)?::?exists(\s*\))?\b/gi,
     el_added_re = /::?added\b/gi,
     el_removed_re = /([^, ]+?)(::?removed)\b/gi,
     class_added_re = /::?class\-added\(([^\(\)]+)\)/gi,
@@ -271,7 +271,9 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
                 g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
                 return '[sl__exist__]:not([sl__removed__])[sl__class__~='+g1+']:not(.'+g1+')';
             })
-            .replace(el_exists_re, '[sl__exist__]:not([sl__removed__])')
+            .replace(el_exists_re, function( g0, g1, g2 ){
+                return !!g1 ? ':not([sl__exist__]):not([sl__removed__])' : '[sl__exist__]:not([sl__removed__])';
+            })
             .replace(el_removed_re, function( g0, g1, g2 ){
                 removed_mutation = true;
                 return '#sl__recycle_bin__>'+g1+'[sl__exist__][sl__removed__]';
@@ -315,7 +317,9 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
                 g1 = '.' === g1.charAt(0) ? g1.slice(1) : g1;
                 return '[sl__exist__]:not([sl__removed__])[sl__class__~='+g1+']:not(.'+g1+')';
             })
-            .replace(el_exists_re, '[sl__exist__]:not([sl__removed__])')
+            .replace(el_exists_re, function( g0, g1, g2 ){
+                return !!g1 ? ':not([sl__exist__]):not([sl__removed__])' : '[sl__exist__]:not([sl__removed__])';
+            })
             .replace(el_removed_re, function( g0, g1, g2 ){
                 return '#sl__recycle_bin__>'+g1+'[sl__exist__][sl__removed__]';
             })
