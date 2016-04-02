@@ -118,6 +118,16 @@ function startEvent( event )
         }
     }
 }
+function emptyRecycleBin( )
+{
+    var t = new Date, d = 2*recycleTimeout;
+    for(var i=recycleBin.childNodes.length-1; i>=0; i--)
+    {
+        var node = recycleBin.childNodes[i];
+        // empty nodes that either are not recycled or expired
+        if ( !node.sl__recycled__ || (t > d+node.sl__recycled__) ) recycleBin.removeChild( node );
+    }
+}
 function decorateEl( el )
 {
     if ( !el.hasAttribute( 'sl__exist__' ) )
@@ -205,16 +215,6 @@ function decorateElAndUpdateAttr( el )
         if ( el.hasAttribute( 'sl__removed__' ) ) el.removeAttribute( 'sl__removed__' );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
         return false;
-    }
-}
-function emptyRecycleBin( )
-{
-    var t = new Date, d = 2*recycleTimeout;
-    for(var i=recycleBin.childNodes.length-1; i>=0; i--)
-    {
-        var node = recycleBin.childNodes[i];
-        // empty nodes that either are not recycled or expired
-        if ( !node.sl__recycled__ || (t > d+node.sl__recycled__) ) recycleBin.removeChild( node );
     }
 }
 
