@@ -21,13 +21,13 @@ var events = {},
     el_removed_re = /([^, ]+?)(::?removed)\b/gi,
     class_added_re = /::?class\-added\(([^\(\)]+)\)/gi,
     class_removed_re = /::?class\-removed\(([^\(\)]+)\)/gi,
-    sl_css = document.createElement('style'),
+    //sl_css = document.createElement('style'),
     styles = document.createElement('style'),
     keyframes = document.createElement('style'),
     head = document.getElementsByTagName('head')[0],
-    recycleBin = document.createElement('div'),
-    recycleBin__added__ = false,
-    recycleTimeout = 1000, // 1 seconds
+    //recycleBin = document.createElement('div'),
+    //recycleBin__added__ = false,
+    //recycleTimeout = 1000, // 1 seconds
     startNames = ['animationstart', 'oAnimationStart', 'MSAnimationStart', 'webkitAnimationStart'],
     prefix = (function() {
         var duration = 'animation-duration: '+anim_dur+';',
@@ -41,17 +41,17 @@ var events = {},
         };
     })();
     
-sl_css.type = styles.type = keyframes.type = "text/css";
-sl_css.setAttribute( 'sl__exist__', 1 );
+/*sl_css.type =*/ styles.type = keyframes.type = "text/css";
+//sl_css.setAttribute( 'sl__exist__', 1 );
 styles.setAttribute( 'sl__exist__', 1 );
 keyframes.setAttribute( 'sl__exist__', 1 );
-sl_css.appendChild( document.createTextNode('#sl__recycle_bin__{position:absolute;max-height:0 !important;max-width:0 !important;overflow:hidden !important;}#sl__recycle_bin__>*{max-height:0 !important;max-width:0 !important;overflow:hidden !important;}') );
-head.appendChild(sl_css);
+/*sl_css.appendChild( document.createTextNode('#sl__recycle_bin__{position:absolute;max-height:0 !important;max-width:0 !important;overflow:hidden !important;}#sl__recycle_bin__>*{max-height:0 !important;max-width:0 !important;overflow:hidden !important;}') );
+head.appendChild(sl_css);*/
 head.appendChild(styles);
 head.appendChild(keyframes);
-recycleBin.setAttribute( 'sl__exist__', 1 );
+/*recycleBin.setAttribute( 'sl__exist__', 1 );
 recycleBin.setAttribute( 'style', 'position:absolute;max-height:0 !important;max-width:0 !important;overflow:hidden !important;' );
-recycleBin.id = 'sl__recycle_bin__';
+recycleBin.id = 'sl__recycle_bin__';*/
 
 function each( x, F, i0, i1 )
 {
@@ -106,7 +106,7 @@ function startEvent( event )
     //setTimeout(function(){
     el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
     //}, 10);
-    if ( evt.removedMutation )
+    /*if ( evt.removedMutation )
     {
         // if element IS removed and IS in the recycle bin
         // remove it NOW explicitly, since any listeners have been called
@@ -116,9 +116,9 @@ function startEvent( event )
         {
             recycleBin.removeChild( el );
         }
-    }
+    }*/
 }
-function emptyRecycleBin( )
+/*function emptyRecycleBin( )
 {
     var t = new Date, d = 2*recycleTimeout;
     for(var i=recycleBin.childNodes.length-1; i>=0; i--)
@@ -127,7 +127,7 @@ function emptyRecycleBin( )
         // empty nodes that either are not recycled or expired
         if ( !node.sl__recycled__ || (t > d+node.sl__recycled__) ) recycleBin.removeChild( node );
     }
-}
+}*/
 function decorateEl( el )
 {
     if ( !el.hasAttribute( 'sl__exist__' ) )
@@ -135,7 +135,7 @@ function decorateEl( el )
         if ( el.hasAttribute( 'sl__removed__' ) ) el.removeAttribute( 'sl__removed__' );
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
-        if ( !el.sl__removeChild )
+        /*if ( !el.sl__removeChild )
         {
             el.sl__removeChild = el.removeChild;
             el.removeChild = function( child ) {
@@ -165,7 +165,7 @@ function decorateEl( el )
                 }
                 return oldChild;
             };
-        }
+        }*/
         return true;
     }
     return false;
@@ -177,7 +177,7 @@ function decorateElAndUpdateAttr( el )
         if ( el.hasAttribute( 'sl__removed__' ) ) el.removeAttribute( 'sl__removed__' );
         el.setAttribute( 'sl__exist__', 1 );
         el.setAttribute( 'sl__class__', ' '+el.className+' ' );
-        if ( !el.sl__removeChild )
+        /*if ( !el.sl__removeChild )
         {
             el.sl__removeChild = el.removeChild;
             el.removeChild = function( child ) {
@@ -207,7 +207,7 @@ function decorateElAndUpdateAttr( el )
                 }
                 return oldChild;
             };
-        }
+        }*/
         return true;
     }
     else
@@ -222,27 +222,29 @@ HTMLDocument.prototype._decorateDom = function( decorator ) {
     var el = this, child, l, i;
     el = el.getElementsByTagName('body')[0];
     if ( 1 !== el.nodeType ) return el;
+    console.log(el.nodeType);
     if ( decorator( el ) )
     {
         child = el.childNodes;
-        for(i=0,l=child.length; i<l; i++) (1 === child[i].nodeType) && child[i]._decorateDom( decorator );
+        for(i=0,l=child.length; i<l; i++) ((child[i] instanceof HTMLElement) && (1 === child[i].nodeType)) && child[i]._decorateDom( decorator );
     }
     return el;
 };
 HTMLElement.prototype._decorateDom = function( decorator ) {
     var el = this, child, l, i;
     if ( 1 !== el.nodeType ) return el;
+    console.log(el.nodeType);
     if ( decorator( el ) )
     {
         child = el.childNodes;
-        for(i=0,l=child.length; i<l; i++) (1 === child[i].nodeType) && child[i]._decorateDom( decorator );
+        for(i=0,l=child.length; i<l; i++) ((child[i] instanceof HTMLElement) && (1 === child[i].nodeType)) && child[i]._decorateDom( decorator );
     }
     return el;
 };
 HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function( selector, fn ){
     if ( !selector || 'function' !== typeof fn ) return;
     
-    if ( !recycleBin__added__ )
+    /*if ( !recycleBin__added__ )
     {
         if ( document.body.childNodes.length ) document.body.insertBefore( recycleBin, document.body.firstChild );
         else document.body.appendChild( recycleBin );
@@ -256,7 +258,7 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
     {
         if ( document.body.childNodes.length ) document.body.insertBefore( recycleBin, document.body.firstChild );
         else document.body.appendChild( recycleBin );
-    }
+    }*/
     
     var has_attr_modified_sel = false,
         removed_mutation = false,
@@ -274,10 +276,10 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
             .replace(el_exists_re, function( g0, g1, g2 ){
                 return !!g1 ? ':not([sl__exist__]):not([sl__removed__])' : '[sl__exist__]:not([sl__removed__])';
             })
-            .replace(el_removed_re, function( g0, g1, g2 ){
+            /*.replace(el_removed_re, function( g0, g1, g2 ){
                 removed_mutation = true;
                 return '#sl__recycle_bin__>'+g1+'[sl__exist__][sl__removed__]';
-            })
+            })*/
             .replace(el_added_re, ':not([sl__exist__]):not([sl__removed__])'),
         key = selectors[sel],
         listeners = this.selectorListeners = this.selectorListeners || {};
@@ -320,9 +322,9 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
             .replace(el_exists_re, function( g0, g1, g2 ){
                 return !!g1 ? ':not([sl__exist__]):not([sl__removed__])' : '[sl__exist__]:not([sl__removed__])';
             })
-            .replace(el_removed_re, function( g0, g1, g2 ){
+            /*.replace(el_removed_re, function( g0, g1, g2 ){
                 return '#sl__recycle_bin__>'+g1+'[sl__exist__][sl__removed__]';
-            })
+            })*/
             .replace(el_added_re, ':not([sl__exist__]):not([sl__removed__])')
     ;
     
