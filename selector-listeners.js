@@ -104,7 +104,7 @@ function startEvent( event )
     });
     // add a small delay
     //setTimeout(function(){
-    el._decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
+    el.sl__decorateDom( evt.attributeModified ? decorateElAndUpdateAttr : decorateEl );
     //}, 10);
     /*if ( evt.removedMutation )
     {
@@ -297,7 +297,7 @@ HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorLi
     if ( listeners.count ) listeners.count++;
     else
     {
-        this._decorateDom( decorateEl );
+        this.sl__decorateDom( decorateEl );
         listeners.count = 1;
         startNames.forEach(function(name){
             this.addEventListener(name, startEvent, false);
