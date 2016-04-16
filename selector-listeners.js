@@ -218,26 +218,24 @@ function decorateElAndUpdateAttr( el )
     }
 }
 
-HTMLDocument.prototype._decorateDom = function( decorator ) {
+HTMLDocument.prototype.sl__decorateDom = function( decorator ) {
     var el = this, child, l, i;
     el = el.getElementsByTagName('body')[0];
     if ( 1 !== el.nodeType ) return el;
-    console.log(el.nodeType);
     if ( decorator( el ) )
     {
         child = el.childNodes;
-        for(i=0,l=child.length; i<l; i++) ((child[i] instanceof HTMLElement) && (1 === child[i].nodeType)) && child[i]._decorateDom( decorator );
+        for(i=0,l=child.length; i<l; i++) ((child[i] instanceof HTMLElement || child[i] instanceof HTMLDocument) && (1 === child[i].nodeType)) && child[i].sl__decorateDom( decorator );
     }
     return el;
 };
-HTMLElement.prototype._decorateDom = function( decorator ) {
+HTMLElement.prototype.sl__decorateDom = function( decorator ) {
     var el = this, child, l, i;
     if ( 1 !== el.nodeType ) return el;
-    console.log(el.nodeType);
     if ( decorator( el ) )
     {
         child = el.childNodes;
-        for(i=0,l=child.length; i<l; i++) ((child[i] instanceof HTMLElement) && (1 === child[i].nodeType)) && child[i]._decorateDom( decorator );
+        for(i=0,l=child.length; i<l; i++) ((child[i] instanceof HTMLElement || child[i] instanceof HTMLDocument) && (1 === child[i].nodeType)) && child[i].sl__decorateDom( decorator );
     }
     return el;
 };
