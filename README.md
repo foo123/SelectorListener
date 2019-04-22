@@ -7,7 +7,7 @@ Provides the following document/element methods to enable listening for CSS sele
 **note** `this` reference inside callbacks reference the matched element (i.e `event.target`) and **not** the element the listener is attached to (similar to `jQuery` use)
 
 
-###The Basics###
+### The Basics
 
 ```javascript
 
@@ -27,7 +27,7 @@ document.getElementById('foo').removeSelectorListener('.one + .two + .three', on
 
 ```
 
-###Now let's get fancy:###
+### Now let's get fancy:
 
 ```javascript
 
@@ -52,7 +52,7 @@ document.querySelector('#RandomForm').addSelectorListener('slider:out-of-range',
 
 ```
 
-###Select only newly added and/or already existing elements (DOM mutation-like events):###
+### Select only newly added and/or already existing elements (DOM mutation-like events):
 
 ```javascript
 
@@ -66,7 +66,7 @@ document.addSelectorListener('*:exists:target', function(){ ... });
 
 ```
 
-###Select elements which have their css-class changed (either a css class added or removed) (DOM mutation-like events):###
+### Select elements which have their css-class changed (either a css class added or removed) (DOM mutation-like events):
 
 ```javascript
 
@@ -76,7 +76,7 @@ document.addSelectorListener('.foo[bar="boom"]::class-removed(.a-class)', functi
 
 ```
 
-###Select only existing elements that have been removed (DOM mutation-like events, experimental):###
+### Select only existing elements that have been removed (DOM mutation-like events, experimental):
 
 ```javascript
 
@@ -89,7 +89,7 @@ document.addSelectorListener('.foo[bar="boom"]::removed', function(){ ... });
 ![selectors matched screenshot](selectors-matched.png)
 
 
-###Browser Support (tested)###
+### Browser Support (tested)
 
 1. Firefox 40+
 2. Chrome 41+
